@@ -80,7 +80,7 @@ def check_playlist(playlist, duration_base):
 wrongdur_dict = {}
 notinDB_dict = {}
 correct_dict = {}
-durationDB_url = 'All files durations.csv'
+durationDB_url = 'ExampleDurationBase.csv'
 duration_base = load_durationdb(durationDB_url)
 
 for mcrlist in loadmcrlists():
