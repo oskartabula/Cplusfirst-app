@@ -2,13 +2,13 @@ import xml.etree.ElementTree as ET
 import os
 import csv
 import xlrd
+import configparser
 
 def loadmcrlists():
     mcrlists_list = []
-    for file in os.listdir():
+    for file in os.listdir(playlists_location):
         if file.endswith(".MCRList"):
-            files = list([file])
-            mcrlists_list.extend(files)
+            mcrlists_list.extend([f'{playlists_location}\\{file}']) #mało eleganckie ale już byłem śpiący i nie mogłem wpaść na nic lepszego, os.path.abs.abspath zwracało ścieżkę folderu projektu
     return mcrlists_list
 
 def timecode_toframes(timecode):
@@ -56,6 +56,7 @@ def load_durationdb_excel(durationDB_url):
     return duration_base
 
 def load_durationdb(durationDB_url):
+    duration_base = {}
     if durationDB_url.endswith(".xlsx") or durationDB_url.endswith(".xls"):
         duration_base = load_durationdb_excel(durationDB_url)
     if durationDB_url.endswith(".csv"):
@@ -97,15 +98,44 @@ def check_playlist(playlist, duration_base):
         is_ok = True
     return is_ok
 
+def config_create():
+    print('Brak pliku config.ini, odpowiedz na pytania w celu utworzenia.')
+    durationDB_url = input('Podaj ścieżkę do bazy czasów: ')
+    playlists_location = input('Podaj ścieżkę do folderu z playlistami: ')
+    config = configparser.ConfigParser()
+    config['BASIC'] = {'durationDB_url': durationDB_url,
+                         'playlists_location': playlists_location,
+                         'framerate': 25}
+    with open('config.ini', 'w') as configfile:
+        config.write(configfile)
+    config_load()
+
+def config_load():
+    global durationDB_url
+    global playlists_location
+    global framerate
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    durationDB_url = config['BASIC']['durationDB_url']
+    playlists_location = config['BASIC']['playlists_location']
+    if len(playlists_location) == 0:
+        playlists_location = '.'
+    framerate = config['BASIC']['framerate']
+
+def config_use():
+    if os.path.exists('config.ini') == True:
+        config_load()
+    else:
+        config_create()
 
 wrongdur_dict = {}
 notinDB_dict = {}
 correct_dict = {}
-durationDB_url = input('Podaj ścieżkę bazy czasów:\n')
+durationDB_url = ''
+playlists_location = ''
+framerate = ''
 
-if len(durationDB_url) <= 4:
-    durationDB_url = 'ExampleDurationBase.csv'
-    print(f"Nie wybrano bazy czasów, używam domyślnej: {durationDB_url}")
+config_use()
 
 duration_base = load_durationdb(durationDB_url)
 
@@ -125,4 +155,4 @@ if len(notinDB_dict) > 0:
     print('\n\nPoniższych MediaID nie ma w bazie:')
     for wpis in notinDB_dict:
         print(wpis, notinDB_dict.get(wpis))
-input()
+input('\nNaciśnij enter by zamknąć')
